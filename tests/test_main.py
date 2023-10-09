@@ -1,6 +1,8 @@
 import os
+
 import pytest
 from PIL import Image, ImageFont
+
 from main import FontSampleGenerator
 
 
