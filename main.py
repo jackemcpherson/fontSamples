@@ -53,13 +53,3 @@ class FontSampleGenerator:
             current_height += text_height
 
         img.save(output_path)
-
-
-if __name__ == "__main__":
-    generator = FontSampleGenerator(
-        font_path="./fonts/reader-medium-pro.ttf",
-        text="ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        image_size=(250, 250),
-        font_size=45,
-    )
-    generator.generate_sample(output_path="output_files/output.png")
