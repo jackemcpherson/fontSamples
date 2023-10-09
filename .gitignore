@@ -1,6 +1,6 @@
 # custom
 .vscode/
-*.ttf
+fonts/*.ttf
 *.png
 
 # Byte-compiled / optimized / DLL files

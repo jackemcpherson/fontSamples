@@ -7,7 +7,7 @@ from main import FontSampleGenerator
 @pytest.fixture
 def sample_generator():
     return FontSampleGenerator(
-        font_path="./fonts/reader-medium-pro.ttf",
+        font_path="./tests/test_font.ttf",  # Reference the bundled font
         text="ABCDEFGHIJKLMNOPQRSTUVWXYZ",
         image_size=(250, 250),
         font_size=45,
@@ -44,7 +44,7 @@ def test_content_verification(sample_generator):
 
 
 def test_font_verification(sample_generator):
-    """Confirm that the text rendered can use the desired font."""
+    """Confirm that the bundled font can be loaded."""
     assert os.path.exists(sample_generator.font_path)
 
     try:
