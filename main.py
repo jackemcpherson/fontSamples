@@ -43,6 +43,7 @@ class FontSampleGenerator:
         while font.getbbox(lines[0])[2] > max_width and self.font_size > 10:
             self.font_size -= 1
             font = ImageFont.truetype(self.font_path, self.font_size)
+            lines = self._wrap_text(font, max_width)
         return font
 
     def _compute_total_text_height(
@@ -92,16 +93,8 @@ class FontSampleGenerator:
             raise Exception(f"Unable to load font at {self.font_path}. Error: {e}")
 
         max_width = self.image_size[0] - 20
+        font = self._adjust_font_size(font, max_width)
         lines = self._wrap_text(font, max_width)
-
-        # Adjust font size if the first line is too wide
-        while (
-            draw.textbbox((0, 0), lines[0], font=font)[2] > max_width
-            and self.font_size > 10
-        ):
-            self.font_size -= 1
-            font = ImageFont.truetype(self.font_path, self.font_size)
-            lines = self._wrap_text(font, max_width)
 
         total_text_height = self._compute_total_text_height(font, lines)
         current_height = self._compute_start_height(total_text_height)
