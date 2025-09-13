@@ -1,0 +1,76 @@
+name: Dependabot Auto-Merge
+
+# Automatically enables auto-merge on Dependabot PRs after the main CI
+# workflow ("Test and Lint") completes successfully. Requires the repository
+# setting "Allow auto-merge" to be enabled.
+
+on:
+  workflow_run:
+    workflows: ["Test and Lint"]
+    types: [completed]
+
+# Minimal token permissions at the workflow level; job grants needed writes.
+permissions:
+  contents: read
+
+jobs:
+  enableAutoMerge:
+    name: Enable Auto-Merge for Dependabot PRs
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Needs write permissions to enable auto-merge.
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # Use GitHub Script to enable auto-merge via GraphQL on Dependabot PRs.
+      - name: Enable auto-merge on Dependabot PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Identify PRs associated with the completed workflow run.
+            const prs = context.payload.workflow_run.pull_requests || [];
+            if (prs.length === 0) {
+              core.info('No pull requests associated with this workflow run.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runSha = context.payload.workflow_run.head_sha;
+
+            for (const prRef of prs) {
+              const prNumber = prRef.number;
+              const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+
+              // Only act on open PRs authored by Dependabot and matching the run SHA.
+              if (pr.user?.login !== 'dependabot[bot]') {
+                core.info(`Skipping #${prNumber}: author is ${pr.user?.login}`);
+                continue;
+              }
+              if (pr.state !== 'open') {
+                core.info(`Skipping #${prNumber}: state is ${pr.state}`);
+                continue;
+              }
+              if (pr.head?.sha !== runSha) {
+                core.info(`Skipping #${prNumber}: head sha ${pr.head?.sha} != run sha ${runSha}`);
+                continue;
+              }
+
+              try {
+                // Enable auto-merge using GraphQL (SQUASH method by default).
+                await github.graphql(
+                  `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
+                    enablePullRequestAutoMerge(
+                      input: { pullRequestId: $pullRequestId, mergeMethod: $mergeMethod }
+                    ) { clientMutationId }
+                  }`,
+                  { pullRequestId: pr.node_id, mergeMethod: 'SQUASH' }
+                );
+                core.info(`Enabled auto-merge for #${prNumber}`);
+              } catch (e) {
+                core.warning(`Failed to enable auto-merge for #${prNumber}: ${e.message}`);
+              }
+            }
+
