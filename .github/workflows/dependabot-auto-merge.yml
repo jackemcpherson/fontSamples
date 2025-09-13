@@ -52,8 +52,10 @@ jobs:
 
             async function enable(pr) {
               const prNumber = pr.number;
-              if (pr.user?.login !== 'dependabot[bot]') {
-                core.info(`Skipping #${prNumber}: author is ${pr.user?.login}`);
+              const author = pr.user?.login;
+              const isDependabot = author === 'dependabot[bot]' || author === 'app/dependabot';
+              if (!isDependabot) {
+                core.info(`Skipping #${prNumber}: author is ${author}`);
                 return;
               }
               if (pr.state !== 'open') {
