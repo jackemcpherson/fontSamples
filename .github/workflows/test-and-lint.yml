@@ -79,7 +79,7 @@ jobs:
       # Always upload JUnit and coverage reports, even on failure.
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: test-results-${{ matrix.python-version }}
           path: |
@@ -118,7 +118,7 @@ jobs:
       # Upload Bandit results for inspection.
       - name: Upload security scan results
         if: always()
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: security-scan-results
           path: bandit-results.json
