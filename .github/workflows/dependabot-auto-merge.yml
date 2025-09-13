@@ -86,7 +86,7 @@ jobs:
               }
 
               // Case 2: manual dispatch with branch input
-              const branchInput = core.getInput('branch');
+              const branchInput = (context.payload.inputs && context.payload.inputs.branch) || core.getInput('branch');
               if (branchInput) {
                 const { data: list } = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${branchInput}` });
                 if (!list.length) {
