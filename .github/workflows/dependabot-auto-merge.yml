@@ -62,6 +62,14 @@ jobs:
                 core.info(`Skipping #${prNumber}: state is ${pr.state}`);
                 return;
               }
+              // Skip PRs that touch workflow files; enabling auto-merge for these
+              // requires elevated `workflows` permission, which GITHUB_TOKEN lacks.
+              const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number: prNumber, per_page: 100 });
+              const touchesWorkflows = files.some(f => f.filename.startsWith('.github/workflows/'));
+              if (touchesWorkflows) {
+                core.info(`Skipping #${prNumber}: modifies workflow files; manual review required.`);
+                return;
+              }
               try {
                 await github.graphql(
                   `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
