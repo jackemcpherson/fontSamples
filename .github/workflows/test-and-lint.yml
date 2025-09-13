@@ -1,0 +1,105 @@
+name: Test and Lint
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+# Cancel in-progress runs for the same workflow on the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal permissions for security
+permissions:
+  contents: read
+
+jobs:
+  test-and-lint:
+    name: Test and Lint (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Check code formatting with Ruff
+        run: uv run ruff format --check src/ tests/
+
+      - name: Lint code with Ruff
+        run: uv run ruff check src/ tests/
+
+      - name: Type check with mypy
+        run: uv run mypy src/
+
+      - name: Run tests with pytest
+        run: |
+          uv run pytest \
+            --verbose \
+            --cov=src/fontsamples \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junit-xml=pytest-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: |
+            pytest-results.xml
+            coverage.xml
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run security scan with bandit
+        run: |
+          uv add --dev bandit[toml]
+          uv run bandit -r src/ -f json -o bandit-results.json
+        continue-on-error: true
+
+      - name: Upload security scan results
+        if: always()
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: security-scan-results
+          path: bandit-results.json
+          retention-days: 7
