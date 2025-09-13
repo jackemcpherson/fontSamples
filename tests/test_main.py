@@ -44,20 +44,26 @@ def temp_output_file() -> str:
         os.remove(output_path)
 
 
-def test_functional(sample_generator: FontSampleGenerator, temp_output_file: str) -> None:
+def test_functional(
+    sample_generator: FontSampleGenerator, temp_output_file: str
+) -> None:
     """Test that the program runs without errors."""
     sample_generator.generate_sample(output_path=temp_output_file)
     assert os.path.exists(temp_output_file)
 
 
-def test_output_verification(sample_generator: FontSampleGenerator, temp_output_file: str) -> None:
+def test_output_verification(
+    sample_generator: FontSampleGenerator, temp_output_file: str
+) -> None:
     """Test if the image file is created in the expected directory."""
     sample_generator.generate_sample(temp_output_file)
     assert os.path.exists(temp_output_file)
     assert os.path.getsize(temp_output_file) > 0  # File should not be empty
 
 
-def test_content_verification(sample_generator: FontSampleGenerator, temp_output_file: str) -> None:
+def test_content_verification(
+    sample_generator: FontSampleGenerator, temp_output_file: str
+) -> None:
     """Validate that the image generated has the expected properties like dimensions."""
     sample_generator.generate_sample(temp_output_file)
 
@@ -71,7 +77,9 @@ def test_font_verification(sample_generator: FontSampleGenerator) -> None:
     assert sample_generator.font_path.exists()
 
     # Test that the font can be loaded directly
-    font = ImageFont.truetype(str(sample_generator.font_path), sample_generator.font_size)
+    font = ImageFont.truetype(
+        str(sample_generator.font_path), sample_generator.font_size
+    )
     assert font is not None
 
 
@@ -186,12 +194,14 @@ def test_output_directory_creation(test_font_path: Path) -> None:
 def test_cli_module_import() -> None:
     """Test that CLI module can be imported."""
     from fontsamples.cli import main
+
     assert callable(main)
 
 
 def test_package_import() -> None:
     """Test that package can be imported correctly."""
     import fontsamples
+
     assert hasattr(fontsamples, "FontSampleGenerator")
     assert hasattr(fontsamples, "FontSampleError")
     assert hasattr(fontsamples, "FontLoadError")

@@ -11,16 +11,19 @@ logger = logging.getLogger(__name__)
 
 class FontSampleError(Exception):
     """Base exception for font sample generation errors."""
+
     pass
 
 
 class FontLoadError(FontSampleError):
     """Raised when a font file cannot be loaded."""
+
     pass
 
 
 class ImageGenerationError(FontSampleError):
     """Raised when image generation fails."""
+
     pass
 
 
@@ -45,11 +48,7 @@ class FontSampleGenerator:
     TEXT_COLOR = "black"
 
     def __init__(
-        self,
-        font_path: str,
-        text: str,
-        image_size: tuple[int, int],
-        font_size: int
+        self, font_path: str, text: str, image_size: tuple[int, int], font_size: int
     ) -> None:
         """Initialize the FontSampleGenerator.
 
@@ -76,7 +75,7 @@ class FontSampleGenerator:
         if not self.font_path.exists():
             raise FontLoadError(f"Font file not found: {font_path}")
 
-        if self.font_path.suffix.lower() != '.ttf':
+        if self.font_path.suffix.lower() != ".ttf":
             logger.warning("Font file may not be TTF format: %s", font_path)
 
     def _wrap_text(self, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
@@ -148,18 +147,18 @@ class FontSampleGenerator:
         except OSError as e:
             logger.error(
                 "Failed to load font: %s (size: %d)",
-                self.font_path, size, exc_info=True
+                self.font_path,
+                size,
+                exc_info=True,
             )
-            raise FontLoadError(
-                f"Unable to load font at {self.font_path}"
-            ) from e
+            raise FontLoadError(f"Unable to load font at {self.font_path}") from e
 
     def _adjust_font_size_for_fit(
         self,
         draw: ImageDraw.ImageDraw,
         font: ImageFont.FreeTypeFont,
         lines: list[str],
-        max_width: int
+        max_width: int,
     ) -> tuple[ImageFont.FreeTypeFont, list[str], int]:
         """Adjust font size to fit text within maximum width.
 
@@ -177,8 +176,9 @@ class FontSampleGenerator:
         current_size = self.font_size
 
         while (
-            current_lines and
-            draw.textbbox((0, 0), current_lines[0], font=current_font)[2] > max_width
+            current_lines
+            and draw.textbbox((0, 0), current_lines[0], font=current_font)[2]
+            > max_width
             and current_size > self.MIN_FONT_SIZE
         ):
             current_size -= 1
@@ -187,7 +187,8 @@ class FontSampleGenerator:
 
         logger.debug(
             "Font size adjusted from %d to %d for width constraint",
-            self.font_size, current_size
+            self.font_size,
+            current_size,
         )
 
         return current_font, current_lines, current_size
@@ -204,8 +205,11 @@ class FontSampleGenerator:
         """
         logger.info(
             "Generating font sample: %s -> %s (size: %d, dimensions: %dx%d)",
-            self.font_path.name, output_path, self.font_size,
-            self.image_size[0], self.image_size[1]
+            self.font_path.name,
+            output_path,
+            self.font_size,
+            self.image_size[0],
+            self.image_size[1],
         )
 
         try:
@@ -236,10 +240,7 @@ class FontSampleGenerator:
                 x_position = max(0, (self.image_size[0] - text_width) / 2)
 
                 draw.text(
-                    (x_position, current_height),
-                    line,
-                    fill=self.TEXT_COLOR,
-                    font=font
+                    (x_position, current_height), line, fill=self.TEXT_COLOR, font=font
                 )
 
                 line_height = font.getbbox("A")[3] - font.getbbox("A")[1]
@@ -255,9 +256,6 @@ class FontSampleGenerator:
 
         except (OSError, ValueError) as e:
             logger.error(
-                "Failed to generate font sample: %s",
-                output_path, exc_info=True
+                "Failed to generate font sample: %s", output_path, exc_info=True
             )
-            raise ImageGenerationError(
-                f"Failed to generate image: {e}"
-            ) from e
+            raise ImageGenerationError(f"Failed to generate image: {e}") from e

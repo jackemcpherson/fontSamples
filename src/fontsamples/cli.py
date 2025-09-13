@@ -28,7 +28,7 @@ def _setup_logging(verbose: bool) -> logging.Logger:
         level=level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, show_path=False)]
+        handlers=[RichHandler(console=console, show_path=False)],
     )
 
     return logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def _parse_image_size(size_str: str) -> tuple[int, int]:
         typer.BadParameter: If the format is invalid or values are non-positive
     """
     try:
-        width, height = map(int, size_str.split('x'))
+        width, height = map(int, size_str.split("x"))
         if width <= 0 or height <= 0:
             raise ValueError("Dimensions must be positive")
         return (width, height)
@@ -73,7 +73,7 @@ def _validate_text_input(text: str) -> str:
         raise typer.BadParameter("Text cannot be empty")
 
     # Remove any null bytes or control characters that could cause issues
-    cleaned_text = ''.join(char for char in text if ord(char) >= 32 or char in '\t\n\r')
+    cleaned_text = "".join(char for char in text if ord(char) >= 32 or char in "\t\n\r")
 
     if not cleaned_text.strip():
         raise typer.BadParameter("Text contains only control characters")
@@ -83,57 +83,39 @@ def _validate_text_input(text: str) -> str:
 
 def main_command(
     text: Annotated[
-        str,
-        typer.Option(
-            "--text", "-t",
-            help="Text to render in font samples"
-        )
+        str, typer.Option("--text", "-t", help="Text to render in font samples")
     ] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-
     font_size: Annotated[
         int,
         typer.Option(
-            "--font-size", "-s",
-            help="Font size for rendering",
-            min=8,
-            max=500
-        )
+            "--font-size", "-s", help="Font size for rendering", min=8, max=500
+        ),
     ] = 35,
-
     image_size: Annotated[
         str,
         typer.Option(
-            "--image-size", "-i",
-            help="Image size as WIDTHxHEIGHT (e.g., 250x250)"
-        )
+            "--image-size", "-i", help="Image size as WIDTHxHEIGHT (e.g., 250x250)"
+        ),
     ] = "250x250",
-
     fonts_dir: Annotated[
         Path,
         typer.Option(
-            "--fonts-dir", "-f",
+            "--fonts-dir",
+            "-f",
             help="Directory containing font files",
             exists=True,
             file_okay=False,
             dir_okay=True,
             readable=True,
-        )
+        ),
     ] = Path("./fonts/"),
-
     output_dir: Annotated[
         Path,
-        typer.Option(
-            "--output-dir", "-o",
-            help="Directory to save generated samples"
-        )
+        typer.Option("--output-dir", "-o", help="Directory to save generated samples"),
     ] = Path("./output_files/"),
-
     verbose: Annotated[
         bool,
-        typer.Option(
-            "--verbose", "-v",
-            help="Enable verbose output and debug logging"
-        )
+        typer.Option("--verbose", "-v", help="Enable verbose output and debug logging"),
     ] = False,
 ) -> None:
     """Generate visual samples for all TTF fonts in the specified directory.
@@ -168,7 +150,11 @@ def main_command(
     logger.debug(
         "Configuration: text='%s', font_size=%d, image_size=%dx%d, fonts_dir=%s, output_dir=%s",
         validated_text[:50] + "..." if len(validated_text) > 50 else validated_text,
-        font_size, width, height, fonts_dir, output_dir
+        font_size,
+        width,
+        height,
+        fonts_dir,
+        output_dir,
     )
 
     # Ensure output directory exists
@@ -212,10 +198,7 @@ def main_command(
 
             try:
                 generator = FontSampleGenerator(
-                    str(font_file),
-                    validated_text,
-                    image_size_tuple,
-                    font_size
+                    str(font_file), validated_text, image_size_tuple, font_size
                 )
                 generator.generate_sample(str(output_path))
 
@@ -235,7 +218,9 @@ def main_command(
             except Exception as e:
                 error_msg = f"Unexpected error processing {font_file.name}: {e}"
                 console.print(f"[red]✗[/red] {error_msg}")
-                logger.error("Unexpected error for %s: %s", font_file.name, e, exc_info=True)
+                logger.error(
+                    "Unexpected error for %s: %s", font_file.name, e, exc_info=True
+                )
                 errors_details.append((font_file.name, f"Unexpected error: {e}"))
                 error_count += 1
 
@@ -251,8 +236,11 @@ def main_command(
             for font_name, error_detail in errors_details:
                 console.print(f"  • {font_name}: {error_detail}")
 
-        logger.warning("Processing completed with %d errors out of %d files",
-                      error_count, len(font_files))
+        logger.warning(
+            "Processing completed with %d errors out of %d files",
+            error_count,
+            len(font_files),
+        )
         raise typer.Exit(1)
 
     logger.info("All font samples generated successfully")
