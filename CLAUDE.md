@@ -43,8 +43,10 @@ uv pip install dist/*.whl     # Install built package locally
 
 ### CLI Usage
 ```bash
-uv run fontsamples --help                    # Show CLI help
-uv run fontsamples --fonts-dir ./fonts/     # Generate samples for all fonts
+uv run fontsamples --help                    # Show CLI help with rich formatting
+uv run fontsamples -f ./fonts/ -o ./samples/  # Generate samples (short options)
+uv run fontsamples --fonts-dir ./fonts/ --verbose  # Verbose mode with progress indicators
+uv run fontsamples -t "Hello World" -s 48 -i 400x200  # Custom text, font size, and image size
 uv run python -m fontsamples.cli            # Alternative CLI invocation
 ```
 
@@ -68,11 +70,14 @@ The core class handles:
 - Image generation with customizable background
 
 ### CLI Module (`src/fontsamples/cli.py`)
-Enhanced command-line interface featuring:
-- Argument parsing with argparse
+Modern command-line interface built with typer and rich, featuring:
+- Type-hint based argument parsing with typer
+- Rich colored output with progress indicators and status updates
+- Short option aliases (-t, -s, -i, -f, -o, -v) for faster usage
+- Built-in validation with helpful error messages
+- Verbose mode for detailed processing information
 - Configurable text, font size, and image dimensions
-- Batch processing of font directories
-- Error handling and user feedback
+- Batch processing of font directories with success/error tracking
 - Entry point via `fontsamples` command
 
 ### Font Processing Pipeline
@@ -114,6 +119,13 @@ Enhanced command-line interface featuring:
 - src-layout support
 - Editable installs
 - Distribution packaging
+
+### CLI Framework: typer + rich
+- Modern type-hint based CLI framework
+- Automatic help generation from docstrings and type hints
+- Built-in validation and error handling
+- Rich terminal formatting with colors and progress indicators
+- Short option aliases for improved usability
 
 ## Testing Strategy
 - **Bundled Test Font**: `tests/test_font.ttf` ensures consistent cross-platform testing

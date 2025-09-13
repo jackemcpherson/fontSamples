@@ -12,7 +12,7 @@ A modern Python package for generating visual samples of fonts as images. Perfec
 - **⚡ Fast Processing**: Efficiently process multiple fonts in batch
 - **🎛️ Customizable**: Adjust text, size, dimensions, and styling
 - **📦 Easy Installation**: Modern packaging with uv support
-- **🔧 Developer-Friendly**: CLI interface and Python API
+- **🔧 Developer-Friendly**: Modern CLI with typer and rich formatting, plus Python API
 - **📐 Smart Text Handling**: Automatic text wrapping and font scaling
 - **🎯 Type Safe**: Full type annotations and mypy compatibility
 
@@ -48,16 +48,24 @@ Generate samples for all fonts in a directory:
 fontsamples --fonts-dir ./fonts/ --output-dir ./samples/
 ```
 
-Customize the output:
+Customize the output with short options:
 
 ```bash
 fontsamples \
-    --text "The Quick Brown Fox" \
-    --font-size 48 \
-    --image-size 400x200 \
-    --fonts-dir ./fonts/ \
-    --output-dir ./samples/
+    -t "The Quick Brown Fox" \
+    -s 48 \
+    -i 400x200 \
+    -f ./fonts/ \
+    -o ./samples/ \
+    -v  # Enable verbose output with progress indicators
 ```
+
+The CLI now features:
+- **🎨 Rich colored output** with success/error indicators
+- **📊 Progress tracking** with status updates
+- **🔍 Verbose mode** for detailed processing information
+- **⚡ Short option aliases** for faster typing
+- **✅ Built-in validation** with helpful error messages
 
 ### Python API
 
@@ -202,6 +210,8 @@ This project uses modern Python tooling:
 - **mypy**: Static type checker
 - **pytest**: Testing framework
 - **hatchling**: Build backend
+- **typer**: Modern CLI framework with excellent type support
+- **rich**: Beautiful terminal formatting and progress indicators
 
 > **Future Migration Note**: We plan to migrate from mypy to [ty](https://github.com/astral-sh/ty) (Astral's new type checker) once it reaches stable release in late 2025. ty promises significantly faster type checking performance while maintaining compatibility.
 
@@ -213,4 +223,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - Built with [Pillow](https://python-pillow.org/) for image processing
 - Powered by [uv](https://docs.astral.sh/uv/) and [ruff](https://docs.astral.sh/ruff/) from Astral
+- CLI built with [typer](https://typer.tiangolo.com/) and [rich](https://rich.readthedocs.io/) for excellent UX
 - Inspired by the need for better font preview tools
