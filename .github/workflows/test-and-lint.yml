@@ -45,7 +45,7 @@ jobs:
 
       # Install uv (fast Python package manager) and enable caching keyed by pyproject.
       - name: Install uv
-        uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
+        uses: astral-sh/setup-uv@557e51de59eb14aaaba2ed9621916900a91d50c6 # v3.2.4
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
@@ -102,7 +102,7 @@ jobs:
 
       # Install uv to manage Bandit via Python.
       - name: Install uv
-        uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
+        uses: astral-sh/setup-uv@557e51de59eb14aaaba2ed9621916900a91d50c6 # v3.2.4
 
       # Install project dependencies (dev) to ensure Bandit can import project modules.
       - name: Install dependencies
