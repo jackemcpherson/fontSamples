@@ -35,7 +35,7 @@ jobs:
     steps:
       # Fetch the repository contents so steps can run against it.
       - name: Check out repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       # Install the requested Python version from the matrix.
       - name: Set up Python ${{ matrix.python-version }}
@@ -98,7 +98,7 @@ jobs:
     steps:
       # Fetch the repository contents.
       - name: Check out repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       # Install uv to manage Bandit via Python.
       - name: Install uv
