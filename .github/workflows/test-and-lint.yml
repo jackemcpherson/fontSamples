@@ -1,22 +1,28 @@
 name: Test and Lint
 
+# Runs tests, linting, type checks, and basic security scan on PRs and pushes.
+# - Enforces formatting with Ruff (fails if not formatted)
+# - Lints with Ruff rules
+# - Type-checks with mypy
+# - Executes pytest with coverage and uploads reports
+
 on:
   pull_request:
     branches: [master]
   push:
     branches: [master]
 
-# Cancel in-progress runs for the same workflow on the same ref
+# Cancel in-progress runs for the same workflow on the same ref to save minutes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Minimal permissions for security
+# Minimal token permissions (principle of least privilege)
 permissions:
   contents: read
 
 jobs:
-  test-and-lint:
+  testAndLint:
     name: Test and Lint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -27,32 +33,40 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
+      # Fetch the repository contents so steps can run against it.
       - name: Check out repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
+      # Install the requested Python version from the matrix.
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
 
+      # Install uv (fast Python package manager) and enable caching keyed by pyproject.
       - name: Install uv
         uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
 
+      # Create virtualenv and install project + dev dependencies defined in pyproject.toml.
       - name: Install dependencies
         run: uv sync --dev
 
+      # Fail if code is not formatted as per Ruff's formatter.
       - name: Check code formatting with Ruff
         run: uv run ruff format --check src/ tests/
 
+      # Lint for style and correctness issues.
       - name: Lint code with Ruff
         run: uv run ruff check src/ tests/
 
+      # Static type checking.
       - name: Type check with mypy
         run: uv run mypy src/
 
+      # Run the test suite with coverage and export reports for CI visibility.
       - name: Run tests with pytest
         run: |
           uv run pytest \
@@ -62,6 +76,7 @@ jobs:
             --cov-report=term-missing \
             --junit-xml=pytest-results.xml
 
+      # Always upload JUnit and coverage reports, even on failure.
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
@@ -72,7 +87,7 @@ jobs:
             coverage.xml
           retention-days: 7
 
-  security-scan:
+  securityScan:
     name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -81,21 +96,26 @@ jobs:
       security-events: write
 
     steps:
+      # Fetch the repository contents.
       - name: Check out repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
+      # Install uv to manage Bandit via Python.
       - name: Install uv
         uses: astral-sh/setup-uv@77c28f02b3322332d4a4446b3177f426da8bf086 # v3.2.4
 
+      # Install project dependencies (dev) to ensure Bandit can import project modules.
       - name: Install dependencies
         run: uv sync --dev
 
+      # Run Bandit against the src tree, tolerate findings but publish results.
       - name: Run security scan with bandit
         run: |
           uv add --dev bandit[toml]
           uv run bandit -r src/ -f json -o bandit-results.json
         continue-on-error: true
 
+      # Upload Bandit results for inspection.
       - name: Upload security scan results
         if: always()
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
