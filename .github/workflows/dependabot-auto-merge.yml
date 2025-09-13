@@ -5,9 +5,24 @@ name: Dependabot Auto-Merge
 # setting "Allow auto-merge" to be enabled.
 
 on:
+  # Primary: when Test and Lint completes (success), try to enable auto-merge.
   workflow_run:
     workflows: ["Test and Lint"]
     types: [completed]
+
+  # Also act immediately on Dependabot PR events; enabling auto-merge early
+  # lets GitHub merge automatically once required checks pass.
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [master]
+
+  # Manual trigger for a specific branch, e.g., a Dependabot PR head branch.
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "PR head branch (e.g., dependabot/... )"
+        required: false
+        type: string
 
 # Minimal token permissions at the workflow level; job grants needed writes.
 permissions:
@@ -17,7 +32,10 @@ jobs:
   enableAutoMerge:
     name: Enable Auto-Merge for Dependabot PRs
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # For workflow_run, only run when "Test and Lint" concluded successfully;
+    # for pull_request and workflow_dispatch, always allow and let the script decide.
+    if: >-
+      ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     # Needs write permissions to enable auto-merge.
     permissions:
       contents: write
@@ -29,37 +47,20 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Identify PRs associated with the completed workflow run.
-            const prs = context.payload.workflow_run.pull_requests || [];
-            if (prs.length === 0) {
-              core.info('No pull requests associated with this workflow run.');
-              return;
-            }
-
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const runSha = context.payload.workflow_run.head_sha;
 
-            for (const prRef of prs) {
-              const prNumber = prRef.number;
-              const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
-
-              // Only act on open PRs authored by Dependabot and matching the run SHA.
+            async function enable(pr) {
+              const prNumber = pr.number;
               if (pr.user?.login !== 'dependabot[bot]') {
                 core.info(`Skipping #${prNumber}: author is ${pr.user?.login}`);
-                continue;
+                return;
               }
               if (pr.state !== 'open') {
                 core.info(`Skipping #${prNumber}: state is ${pr.state}`);
-                continue;
+                return;
               }
-              if (pr.head?.sha !== runSha) {
-                core.info(`Skipping #${prNumber}: head sha ${pr.head?.sha} != run sha ${runSha}`);
-                continue;
-              }
-
               try {
-                // Enable auto-merge using GraphQL (SQUASH method by default).
                 await github.graphql(
                   `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
                     enablePullRequestAutoMerge(
@@ -74,3 +75,50 @@ jobs:
               }
             }
 
+            async function run() {
+              // Case 1: pull_request event – act on this PR directly.
+              if (context.eventName === 'pull_request') {
+                const pr = context.payload.pull_request;
+                await enable(pr);
+                return;
+              }
+
+              // Case 2: manual dispatch with branch input
+              const branchInput = core.getInput('branch');
+              if (branchInput) {
+                const { data: list } = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${branchInput}` });
+                if (!list.length) {
+                  core.info(`No open PR found for head ${owner}:${branchInput}`);
+                  return;
+                }
+                for (const pr of list) await enable(pr);
+                return;
+              }
+
+              // Case 3: workflow_run – try associated PRs; if absent, fall back to head branch lookup.
+              const run = context.payload.workflow_run || {};
+              const prs = run.pull_requests || [];
+              if (prs.length) {
+                for (const prRef of prs) {
+                  const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prRef.number });
+                  await enable(pr);
+                }
+                return;
+              }
+
+              // Fallback by head branch from the workflow run context.
+              const headBranch = run?.head_branch;
+              if (headBranch) {
+                const { data: list } = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${headBranch}` });
+                if (!list.length) {
+                  core.info(`No open PR found for head ${owner}:${headBranch}`);
+                  return;
+                }
+                for (const pr of list) await enable(pr);
+                return;
+              }
+
+              core.info('No pull requests discovered to auto-merge.');
+            }
+
+            await run();
