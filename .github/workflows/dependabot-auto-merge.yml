@@ -44,7 +44,7 @@ jobs:
     steps:
       # Use GitHub Script to enable auto-merge via GraphQL on Dependabot PRs.
       - name: Enable auto-merge on Dependabot PRs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const owner = context.repo.owner;
